@@ -53,4 +53,17 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation("androidx.navigation:navigation-compose:2.8.5")
     implementation("androidx.compose.material:material-icons-extended:1.7.6")
+    // Firebase BOM (gestionará versiones compatibles automáticamente)
+    implementation(platform("com.google.firebase:firebase-bom:32.8.0"))
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
+
+    // Servicios de Localización (para la pantalla BuscarDispositivo)
+    implementation("com.google.android.gms:play-services-location:21.2.0")
+
+    // Pruebas unitarias (JUnit y Mockito)
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.mockito:mockito-core:5.11.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
+
 }
