@@ -48,6 +48,10 @@ class MainActivity : ComponentActivity() {
                     composable("home") {
                         HomeScreen(
                             user = usuarioLogueadoActual,
+                            onNavigateToHablar = { navController.navigate("hablar") },
+                            onNavigateToEscribir = { navController.navigate("escribir") },
+                            onNavigateToHistorial = { navController.navigate("historial") },
+                            onNavigateToDispositivos = { navController.navigate("dispositivos") },
                             onLogout = {
                                 usuarioLogueadoActual = null
                                 navController.navigate("login") {
@@ -55,6 +59,20 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         )
+                    }
+                    composable("hablar") {
+                        HablarScreen()
+                    }
+                    composable("escribir") {
+                        EscribirScreen()
+                    }
+                    composable("historial") {
+                        HistorialScreen(
+                            onNavigateBack = { navController.popBackStack() }
+                        )
+                    }
+                    composable("dispositivos") {
+                        BuscarDispositivoScreen()
                     }
                 }
             }

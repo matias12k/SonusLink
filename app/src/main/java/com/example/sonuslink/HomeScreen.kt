@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,7 +18,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun HomeScreen(user: User?, onLogout: () -> Unit) {
+fun HomeScreen(
+    user: User?,
+    onNavigateToHablar: () -> Unit = {},
+    onNavigateToEscribir: () -> Unit = {},
+    onNavigateToHistorial: () -> Unit = {},
+    onNavigateToDispositivos: () -> Unit = {},
+    onLogout: () -> Unit
+) {
     var textoMensaje by remember { mutableStateOf("") }
     val context = LocalContext.current
 
@@ -41,11 +49,59 @@ fun HomeScreen(user: User?, onLogout: () -> Unit) {
             color = MaterialTheme.colorScheme.primary
         )
         Text(
-            text = "Grado auditivo: ${user?.nivelAudicion} | Lengua: ${user?.lenguaSenas}",
+            text = "Grado auditivo: ${user?.nivelAudicion ?: "No especificado"} | Lengua: ${user?.lenguaSenas ?: "Llar"}",
             fontSize = 13.sp,
             color = Color.DarkGray,
             modifier = Modifier.padding(bottom = 16.dp)
         )
+
+        // SECCIÓN: Módulos Principales de Comunicación
+        Text("Módulos de Asistencia:", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Button(
+                onClick = onNavigateToHablar,
+                modifier = Modifier.weight(1f).height(48.dp),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text("Hablar (TTS)", fontSize = 13.sp)
+            }
+            Button(
+                onClick = onNavigateToEscribir,
+                modifier = Modifier.weight(1f).height(48.dp),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text("Escribir (STT)", fontSize = 13.sp)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            FilledTonalButton(
+                onClick = onNavigateToHistorial,
+                modifier = Modifier.weight(1f).height(48.dp),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text("Historial Cloud", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            }
+            FilledTonalButton(
+                onClick = onNavigateToDispositivos,
+                modifier = Modifier.weight(1f).height(48.dp),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text("Dispositivos", fontSize = 13.sp)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
 
         // Panel de transcripción visual rápida
         Card(

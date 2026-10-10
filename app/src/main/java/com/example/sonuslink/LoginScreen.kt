@@ -19,7 +19,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sonuslink.User
-import com.example.sonuslink.arrayUsuariosRegistrados
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun LoginScreen(
@@ -29,7 +29,10 @@ fun LoginScreen(
 ) {
     var emailInput by remember { mutableStateOf("") }
     var passwordInput by remember { mutableStateOf("") }
+    var estaCargando by remember { mutableStateOf(false) }
+
     val context = LocalContext.current
+    val authService = remember { AuthService() }
 
     Column(
         modifier = Modifier
@@ -60,6 +63,7 @@ fun LoginScreen(
             placeholder = { Text("ejemplo@duocuc.cl") },
             leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
             singleLine = true,
+            enabled = !estaCargando,
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -73,40 +77,85 @@ fun LoginScreen(
             leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
             visualTransformation = PasswordVisualTransformation(),
             singleLine = true,
+            enabled = !estaCargando,
             modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // BOTÓN: Iniciar Sesión (Valida contra el Array en memoria)
+        // BOTÓN: Iniciar Sesión con Firebase Authentication
         Button(
             onClick = {
-                val match = arrayUsuariosRegistrados.find {
-                    it.email.equals(emailInput.trim(), ignoreCase = true) && it.pass == passwordInput
+                val emailLimpio = emailInput.trim()
+                val passLimpio = passwordInput.trim()
+
+                if (emailLimpio.isEmpty() || passLimpio.isEmpty()) {
+                    Toast.makeText(context, "Por favor complete todos los campos", Toast.LENGTH_SHORT).show()
+                    return@Button
                 }
-                if (match != null) {
-                    Toast.makeText(context, "Bienvenido/a, ${match.nombre}", Toast.LENGTH_SHORT).show()
-                    onLoginSuccess(match)
-                } else {
-                    Toast.makeText(context, "Credenciales incorrectas. Verifique correo o clave.", Toast.LENGTH_LONG).show()
+
+                estaCargando = true
+                authService.loginUsuario(emailLimpio, passLimpio) { exitoso, error ->
+                    estaCargando = false
+                    if (exitoso) {
+                        val usuarioAuth = FirebaseAuth.getInstance().currentUser
+                        // Extrae el nombre del correo o displayName si existe
+                        val nombreMostrar = usuarioAuth?.displayName
+                            ?: emailLimpio.substringBefore("@").replaceFirstChar { it.uppercase() }
+
+                        val usuarioSesion = User(
+                            nombre = nombreMostrar,
+                            email = emailLimpio,
+                            pass = passLimpio
+                        )
+
+                        Toast.makeText(context, "Bienvenido/a, $nombreMostrar", Toast.LENGTH_SHORT).show()
+                        onLoginSuccess(usuarioSesion)
+                    } else {
+                        val mensaje = when {
+                            error?.contains("invalid-credential", ignoreCase = true) == true ||
+                                    error?.contains("user-not-found", ignoreCase = true) == true ||
+                                    error?.contains("wrong-password", ignoreCase = true) == true ->
+                                "Credenciales incorrectas. Verifique correo o clave."
+                            error?.contains("network", ignoreCase = true) == true ->
+                                "Error de conexión. Revise su conexión a Internet."
+                            else -> error ?: "Error al autenticar usuario"
+                        }
+                        Toast.makeText(context, mensaje, Toast.LENGTH_LONG).show()
+                    }
                 }
             },
+            enabled = !estaCargando,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp),
             shape = RoundedCornerShape(10.dp)
         ) {
-            Text("INICIAR SESIÓN", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            if (estaCargando) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = 2.5.dp
+                )
+            } else {
+                Text("INICIAR SESIÓN", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         // VÍNCULOS
-        TextButton(onClick = onNavigateToRecuperar) {
+        TextButton(
+            onClick = onNavigateToRecuperar,
+            enabled = !estaCargando
+        ) {
             Text("¿Olvidó su contraseña?", color = MaterialTheme.colorScheme.primary)
         }
 
-        TextButton(onClick = onNavigateToRegistro) {
+        TextButton(
+            onClick = onNavigateToRegistro,
+            enabled = !estaCargando
+        ) {
             Text("¿No tiene cuenta? Regístrese aquí", fontWeight = FontWeight.SemiBold)
         }
     }
