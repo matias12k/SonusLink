@@ -2,7 +2,6 @@ package com.example.sonuslink
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
 
 // Modelo de datos para cada registro
 data class MensajeHistorial(
@@ -35,29 +34,37 @@ class HistorialService(
             .addOnFailureListener { e -> onComplete(false, e.message) }
     }
 
-    // Escuchar el historial del usuario actual en tiempo real
+    // Escuchar el historial en tiempo real sin requerir índices compuestos
     fun escucharHistorial(onUpdate: (List<MensajeHistorial>) -> Unit) {
-        val uidActual = auth.currentUser?.uid ?: return
+        val uidActual = auth.currentUser?.uid
 
-        db.collection("historial")
-            .whereEqualTo("uid", uidActual)
-            .orderBy("timestamp", Query.Direction.DESCENDING)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null || snapshot == null) {
-                    onUpdate(emptyList())
-                    return@addSnapshotListener
-                }
+        val query = if (uidActual != null) {
+            db.collection("historial").whereEqualTo("uid", uidActual)
+        } else {
+            db.collection("historial")
+        }
 
-                val lista = snapshot.documents.map { doc ->
+        query.addSnapshotListener { snapshot, error ->
+            if (error != null || snapshot == null) {
+                // Si hay error en consola o listener, no vaciamos agresivamente
+                return@addSnapshotListener
+            }
+
+            val lista = snapshot.documents.mapNotNull { doc ->
+                val texto = doc.getString("texto") ?: ""
+                if (texto.isBlank()) null
+                else {
                     MensajeHistorial(
                         id = doc.id,
                         uid = doc.getString("uid") ?: "",
-                        texto = doc.getString("texto") ?: "",
-                        tipo = doc.getString("tipo") ?: "",
+                        texto = texto,
+                        tipo = doc.getString("tipo") ?: "General",
                         timestamp = doc.getLong("timestamp") ?: 0L
                     )
                 }
-                onUpdate(lista)
-            }
+            }.sortedByDescending { it.timestamp } // Ordenamiento en memoria seguro
+
+            onUpdate(lista)
+        }
     }
 }

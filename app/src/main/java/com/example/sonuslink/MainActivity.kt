@@ -61,10 +61,14 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                     composable("hablar") {
-                        HablarScreen()
+                        HablarScreen(
+                            onNavigateBack = { navController.popBackStack() }
+                        )
                     }
                     composable("escribir") {
-                        EscribirScreen()
+                        EscribirScreen(
+                            onNavigateBack = { navController.popBackStack() }
+                        )
                     }
                     composable("historial") {
                         HistorialScreen(
